@@ -3,44 +3,39 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<style>[hidden] { display: none !important; } body { margin: 0; }</style>
 <title>Cuatro plantas en Perú</title>
+<meta name="description" content="Mapa y vista satelital de las plantas Rotamel (Andahuaylas), Porcón (Cajamarca), Chuquicara (Áncash) e Hindus (Chimbote).">
+<meta property="og:title" content="Cuatro plantas en Perú">
+<meta property="og:description" content="Mapa y vista satelital de las plantas Rotamel, Porcón, Chuquicara e Hindus.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
-/* Layout: map-first split. Vector map of Peru's departments on the left, plant register and distances on the right; stacks on phones. */
+/* Layout: map-first split. Street or satellite basemap on the left, plant register and distances on the right; stacks on phones. */
 :root {
   --bg: #EDF0EF;
   --surface: #FFFFFF;
   --paper: #E1E7E5;
-  --land: #FBFBF7;
-  --land-hi: #F6E6D8;
   --line: #C9D2CF;
   --edge: #6E8183;
   --ink: #16272A;
   --muted: #5A6C6E;
   --accent: #C4460E;
-  --accent-soft: rgba(196, 70, 14, .16);
-  --grat: rgba(22, 39, 42, .07);
+  --accent-soft: rgba(196, 70, 14, .22);
+  --pin-ring: #FFFFFF;
   --f-display: "Archivo", "Arial Narrow", system-ui, sans-serif;
   --f-body: "Archivo", system-ui, -apple-system, "Segoe UI", sans-serif;
   --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0F1617; --surface: #172123; --paper: #131C1E; --land: #1D2A2C; --land-hi: #3A2A1F;
-    --line: #2F3F40; --edge: #7F9694; --ink: #E2EBE9; --muted: #93A6A5; --accent: #FF7B42;
-    --accent-soft: rgba(255, 123, 66, .2); --grat: rgba(226, 235, 233, .06); color-scheme: dark;
+  :root {
+    --bg: #0F1617; --surface: #172123; --paper: #131C1E; --line: #2F3F40; --edge: #7F9694;
+    --ink: #E2EBE9; --muted: #93A6A5; --accent: #FF7B42; --accent-soft: rgba(255, 123, 66, .28); color-scheme: dark;
   }
 }
-:root[data-theme="dark"] {
-  --bg: #0F1617; --surface: #172123; --paper: #131C1E; --land: #1D2A2C; --land-hi: #3A2A1F;
-  --line: #2F3F40; --edge: #7F9694; --ink: #E2EBE9; --muted: #93A6A5; --accent: #FF7B42;
-  --accent-soft: rgba(255, 123, 66, .2); --grat: rgba(226, 235, 233, .06); color-scheme: dark;
-}
-
-body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5; }
 .page {
   max-width: 1280px; margin: 0 auto; display: grid; gap: 22px;
   padding-block: 28px 40px;
@@ -61,44 +56,29 @@ h1 { margin: 0; font-family: var(--f-display); font-stretch: 80%; font-weight: 7
   overflow: hidden; height: min(84vh, 860px); min-height: 540px;
 }
 @media (max-width: 940px) { .map-card { height: auto; min-height: 0; aspect-ratio: 4 / 5; max-height: 82vh; max-width: 100%; } }
-#map { display: block; width: 100%; height: 100%; cursor: grab; }
-#map:active { cursor: grabbing; }
-.grat { fill: none; stroke: var(--grat); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.dept { fill: var(--land); stroke: none; transition: fill .2s; }
-.dept.has-plant { fill: var(--land-hi); }
-.inner { fill: none; stroke: var(--line); stroke-width: 1; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
-.outline { fill: none; stroke: var(--edge); stroke-width: 1.3; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
-.d-label { font-family: var(--f-display); font-stretch: 72%; font-weight: 600; font-size: 10px; letter-spacing: .09em; text-transform: uppercase; fill: var(--muted); text-anchor: middle; pointer-events: none; }
-.c-label { font-family: var(--f-display); font-stretch: 100%; font-weight: 500; font-size: 11px; letter-spacing: .22em; text-transform: uppercase; fill: var(--muted); opacity: .75; text-anchor: middle; pointer-events: none; }
-.o-label { font-family: var(--f-body); font-style: italic; font-size: 13px; letter-spacing: .04em; fill: var(--muted); opacity: .8; text-anchor: middle; pointer-events: none; }
-.mk { cursor: pointer; outline: none; }
-.mk .hit { fill: transparent; }
-.mk .halo { fill: var(--accent-soft); stroke: none; transform-box: fill-box; transform-origin: center; transition: transform .25s; }
-.mk .dot { fill: var(--accent); stroke: var(--land); stroke-width: 2; }
-.mk .pulse { fill: none; stroke: var(--accent); stroke-width: 1.5; opacity: 0; transform-box: fill-box; transform-origin: center; }
-.m-label { font-family: var(--f-body); font-weight: 650; font-size: 12.5px; fill: var(--ink); paint-order: stroke; stroke: var(--land); stroke-width: 3.5px; stroke-linejoin: round; }
-.mk:hover .halo, .mk:focus-visible .halo, .mk.is-sel .halo { transform: scale(1.45); }
-.mk:focus-visible .dot { stroke: var(--ink); }
-.mk.is-sel .pulse { animation: pulse 1.8s ease-out infinite; }
-@keyframes pulse { from { opacity: .7; transform: scale(1); } to { opacity: 0; transform: scale(2.6); } }
+#map { width: 100%; height: 100%; background: var(--paper); font-family: var(--f-body); }
+.map-tools { position: absolute; top: 12px; left: 12px; right: 64px; z-index: 1000; display: flex; flex-wrap: wrap; gap: 8px; pointer-events: none; }
+.seg { display: flex; pointer-events: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 3px; gap: 3px; box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+.tool { font: 600 13px/1 var(--f-body); color: var(--ink); background: transparent; border: 0; border-radius: 6px; padding: 8px 11px; cursor: pointer; }
+.tool:hover { background: var(--paper); }
+.tool[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.leaflet-control-zoom a { color: var(--ink); }
 
-.map-tools { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; pointer-events: none; }
-.views, .zoom { display: flex; gap: 6px; pointer-events: auto; }
-.zoom { flex-direction: column; }
-.tool {
-  font: 600 13px/1 var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line);
-  border-radius: 7px; padding: 8px 11px; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.06);
+.pt-icon { background: none; border: 0; }
+.pt { position: relative; display: block; width: 18px; height: 18px; }
+.pt .dot { position: absolute; inset: 2px; border-radius: 50%; background: var(--accent); border: 2px solid var(--pin-ring); box-shadow: 0 0 0 4px var(--accent-soft), 0 1px 4px rgba(0,0,0,.45); }
+.pt .lbl {
+  position: absolute; top: 50%; left: calc(100% + 5px); transform: translateY(-50%); white-space: nowrap;
+  background: var(--surface); color: var(--ink); font: 650 12.5px/1 var(--f-body); padding: 5px 9px;
+  border-radius: 999px; border: 1px solid var(--line); box-shadow: 0 1px 4px rgba(0,0,0,.3);
 }
-.tool:hover { border-color: var(--edge); }
-.tool[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
-.zoom .tool { width: 34px; height: 34px; padding: 0; font-size: 18px; font-weight: 500; }
-.scale { position: absolute; left: 14px; bottom: 12px; display: grid; gap: 3px; pointer-events: none; }
-.scale-bar { height: 6px; border: 1.5px solid var(--ink); border-top: 0; width: 100px; }
-.scale-label { font: 500 11px/1 var(--f-mono); color: var(--ink); }
-.hint { position: absolute; right: 14px; bottom: 12px; margin: 0; font-size: 12px; color: var(--muted); pointer-events: none; }
-@media (max-width: 520px) { .hint { display: none; } }
-.map-msg { position: absolute; inset: 0; display: grid; place-items: center; padding: 24px; text-align: center; color: var(--muted); }
-.map-msg[hidden] { display: none; }
+.pt.left .lbl { left: auto; right: calc(100% + 5px); }
+.pt.is-sel .dot { animation: pulse 1.6s ease-out infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 var(--accent-soft), 0 1px 4px rgba(0,0,0,.45); } 100% { box-shadow: 0 0 0 14px rgba(0,0,0,0), 0 1px 4px rgba(0,0,0,.45); } }
+.pt.is-sel .lbl { border-color: var(--accent); }
+.leaflet-popup-content { font-family: var(--f-body); font-size: 13px; line-height: 1.45; margin: 12px 14px; }
+.leaflet-popup-content strong { font-family: var(--f-display); font-stretch: 88%; font-size: 15px; }
+.pop-c { font-family: var(--f-mono); font-size: 12px; }
 
 /* Register */
 .panel { display: grid; gap: 22px; min-width: 0; }
@@ -135,8 +115,8 @@ td.km, th.km { text-align: right; font-family: var(--f-mono); font-variant-numer
 .foot { margin: 0; font-size: 12px; color: var(--muted); max-width: 90ch; }
 
 @media (prefers-reduced-motion: reduce) {
-  .mk.is-sel .pulse { animation: none; }
-  .mk .halo, .plant, .dept { transition: none; }
+  .pt.is-sel .dot { animation: none; }
+  .plant { transition: none; }
 }
 </style>
 </head>
@@ -145,25 +125,22 @@ td.km, th.km { text-align: right; font-family: var(--f-mono); font-variant-numer
   <header class="head">
     <p class="eyebrow">Perú · 4 plantas · coordenadas WGS84</p>
     <h1>Cuatro plantas en Perú</h1>
-    <p class="lede">Ubicación de las plantas de Andahuaylas, Cajamarca, Chuquicara y Chimbote, con las coordenadas convertidas a grados decimales. Toca una planta para acercar el mapa.</p>
+    <p class="lede">Ubicación de las plantas de Andahuaylas, Cajamarca, Chuquicara y Chimbote. Cambia entre mapa y vista satelital, y toca una planta para acercarte a ella.</p>
   </header>
 
   <main class="grid">
-    <section class="map-card" id="map-card" aria-label="Mapa de ubicaciones">
-      <svg id="map" role="img" aria-label="Mapa de Perú por departamentos con las cuatro plantas marcadas"></svg>
+    <section class="map-card" aria-label="Mapa de ubicaciones">
+      <div id="map" role="region" aria-label="Mapa con las cuatro plantas"></div>
       <div class="map-tools">
-        <div class="views" role="group" aria-label="Vista del mapa">
-          <button class="tool" id="view-all" type="button" aria-pressed="true">Todo Perú</button>
-          <button class="tool" id="view-north" type="button" aria-pressed="false">Zona norte</button>
+        <div class="seg" role="group" aria-label="Tipo de mapa">
+          <button class="tool" id="layer-mapa" type="button" aria-pressed="true">Mapa</button>
+          <button class="tool" id="layer-satelite" type="button" aria-pressed="false">Satélite</button>
         </div>
-        <div class="zoom" role="group" aria-label="Zoom">
-          <button class="tool" id="zoom-in" type="button" aria-label="Acercar">+</button>
-          <button class="tool" id="zoom-out" type="button" aria-label="Alejar">−</button>
+        <div class="seg" role="group" aria-label="Encuadre">
+          <button class="tool" id="view-all" type="button">Las 4 plantas</button>
+          <button class="tool" id="view-north" type="button">Zona norte</button>
         </div>
       </div>
-      <div class="scale" aria-hidden="true"><span class="scale-bar" id="scale-bar"></span><span class="scale-label" id="scale-label">100 km</span></div>
-      <p class="hint">Arrastra para mover · rueda o pellizco para acercar</p>
-      <div class="map-msg" id="map-msg" hidden>No se pudo cargar el mapa. Revisa tu conexión y vuelve a abrir la página; las coordenadas siguen disponibles en la lista.</div>
     </section>
 
     <aside class="panel">
@@ -181,25 +158,21 @@ td.km, th.km { text-align: right; font-family: var(--f-mono); font-variant-numer
     </aside>
   </main>
 
-  <p class="foot">Límites departamentales: Natural Earth, vía Datamaps; son aproximados y sirven como referencia visual. El departamento de cada planta se calcula con esos límites. Distancias sobre una esfera de radio 6 371 km.</p>
+  <p class="foot">Mapa: © colaboradores de OpenStreetMap. Vista satelital: Esri, Maxar, Earthstar Geographics. Departamento según límites aproximados de Natural Earth. Distancias sobre una esfera de radio 6 371 km.</p>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.9.0/d3.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/datamaps/0.5.10/datamaps.per.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 (function () {
   const PLANTS = [
-    { id: 'rotamel', short: 'Rotamel', name: 'Planta Rotamel Andahuaylas', lat: '-13.678361', lon: '-73.201056', side: 'right' },
-    { id: 'porcon', short: 'Porcón', name: 'Planta Cajamarca Porcón', lat: '-7.074389', lon: '-78.612056', side: 'right' },
-    { id: 'chuquicara', short: 'Chuquicara', name: 'Planta Chuquicara Áncash', lat: '-8.6611718', lon: '-78.2241607', side: 'right' },
-    { id: 'hindus', short: 'Hindus', name: 'Planta Hindus Chimbote', lat: '-8.875754', lon: '-78.645469', side: 'left' }
-  ].map(p => ({ ...p, la: +p.lat, lo: +p.lon, dept: null }));
+    { id: 'rotamel', short: 'Rotamel', name: 'Planta Rotamel Andahuaylas', dept: 'Apurímac', lat: '-13.678361', lon: '-73.201056', side: 'right' },
+    { id: 'porcon', short: 'Porcón', name: 'Planta Cajamarca Porcón', dept: 'Cajamarca', lat: '-7.074389', lon: '-78.612056', side: 'right' },
+    { id: 'chuquicara', short: 'Chuquicara', name: 'Planta Chuquicara Áncash', dept: 'Áncash', lat: '-8.6611718', lon: '-78.2241607', side: 'right' },
+    { id: 'hindus', short: 'Hindus', name: 'Planta Hindus Chimbote', dept: 'La Libertad', lat: '-8.875754', lon: '-78.645469', side: 'left' }
+  ].map(p => ({ ...p, la: +p.lat, lo: +p.lon }));
   const NORTH = ['porcon', 'chuquicara', 'hindus'];
-  const DEPT_NAMES = { 'Ancash': 'Áncash', 'Lima Province': 'Lima Metropolitana' };
-  const deptName = n => DEPT_NAMES[n] || n;
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const DUR = reduceMotion ? 0 : 650;
+  const gmaps = p => 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(p.lat + ',' + p.lon);
 
   function dms(v, pos, neg) {
     const a = Math.abs(v);
@@ -220,12 +193,11 @@ td.km, th.km { text-align: right; font-family: var(--f-mono); font-variant-numer
     const li = document.createElement('li');
     li.className = 'plant';
     li.id = 'plant-' + p.id;
-    const q = encodeURIComponent(p.lat + ',' + p.lon);
     li.innerHTML = `
       <button class="plant-hit" type="button" id="hit-${p.id}" aria-pressed="false">
         <span class="pin" aria-hidden="true"></span>
         <span class="pname">${p.name}</span>
-        <span class="pdept" id="dept-${p.id}">Perú</span>
+        <span class="pdept">Departamento de ${p.dept}</span>
       </button>
       <dl class="coords">
         <div><dt>Latitud</dt><dd id="lat-${p.id}">${p.lat}</dd><dd class="dms">${dms(p.la, 'N', 'S')}</dd></div>
@@ -233,7 +205,7 @@ td.km, th.km { text-align: right; font-family: var(--f-mono); font-variant-numer
       </dl>
       <div class="actions">
         <button class="act" type="button" id="copy-${p.id}">Copiar coordenadas</button>
-        <a class="act" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">Abrir en Google Maps ↗</a>
+        <a class="act" href="${gmaps(p)}" target="_blank" rel="noopener">Abrir en Google Maps ↗</a>
       </div>`;
     list.appendChild(li);
     li.querySelector('.plant-hit').addEventListener('click', () => select(p.id, true));
@@ -265,173 +237,74 @@ td.km, th.km { text-align: right; font-family: var(--f-mono); font-variant-numer
   document.getElementById('dist-body').innerHTML = pairs.map(([a, b, d]) =>
     `<tr><td>${a.short} – ${b.short}</td><td class="km">${nf.format(d)}</td></tr>`).join('');
 
-  let selected = null;
-  let map = null;
+  // Map
+  const map = L.map('map', { zoomSnap: 0.25, minZoom: 4, maxZoom: 18 });
+  map.zoomControl.setPosition('topright');
+  L.control.scale({ imperial: false, position: 'bottomleft' }).addTo(map);
+
+  const layers = {
+    mapa: L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+    }),
+    satelite: L.layerGroup([
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19, maxNativeZoom: 18, attribution: 'Imágenes © Esri, Maxar, Earthstar Geographics'
+      }),
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19, maxNativeZoom: 18, attribution: 'Etiquetas © Esri'
+      })
+    ])
+  };
+  let current = null;
+  function setLayer(name) {
+    if (current === name) return;
+    if (current) map.removeLayer(layers[current]);
+    layers[name].addTo(map);
+    current = name;
+    document.getElementById('layer-mapa').setAttribute('aria-pressed', String(name === 'mapa'));
+    document.getElementById('layer-satelite').setAttribute('aria-pressed', String(name === 'satelite'));
+    try { history.replaceState(null, '', '#' + name); } catch (e) {}
+  }
+  document.getElementById('layer-mapa').addEventListener('click', () => setLayer('mapa'));
+  document.getElementById('layer-satelite').addEventListener('click', () => setLayer('satelite'));
+
+  PLANTS.forEach(p => {
+    const icon = L.divIcon({
+      className: 'pt-icon', iconSize: [18, 18], iconAnchor: [9, 9], popupAnchor: [0, -10],
+      html: `<span class="pt ${p.side}" id="pt-${p.id}"><span class="dot"></span><span class="lbl">${p.short}</span></span>`
+    });
+    p.marker = L.marker([p.la, p.lo], { icon, title: p.name, riseOnHover: true }).addTo(map)
+      .bindPopup(`<strong>${p.name}</strong><br>Departamento de ${p.dept}<br><span class="pop-c">${p.lat}, ${p.lon}</span><br><a href="${gmaps(p)}" target="_blank" rel="noopener">Abrir en Google Maps ↗</a>`);
+    p.marker.on('click', () => select(p.id, false));
+  });
+
+  const pad = () => window.innerWidth < 600 ? [40, 40] : [80, 80];
+  function fit(ids) {
+    const b = L.latLngBounds(PLANTS.filter(p => ids.includes(p.id)).map(p => [p.la, p.lo]));
+    map.fitBounds(b, { padding: pad(), animate: !reduceMotion });
+  }
+  document.getElementById('view-all').addEventListener('click', () => fit(PLANTS.map(p => p.id)));
+  document.getElementById('view-north').addEventListener('click', () => fit(NORTH));
+
   function select(id, zoom) {
-    selected = id;
     PLANTS.forEach(p => {
       const on = p.id === id;
       document.getElementById('plant-' + p.id).classList.toggle('is-sel', on);
       document.getElementById('hit-' + p.id).setAttribute('aria-pressed', String(on));
+      const el = document.getElementById('pt-' + p.id);
+      if (el) el.classList.toggle('is-sel', on);
     });
-    if (map) map.highlight(id, zoom);
+    if (!zoom) return;
+    const p = PLANTS.find(p => p.id === id);
+    if (reduceMotion) map.setView([p.la, p.lo], 16);
+    else map.flyTo([p.la, p.lo], 16, { duration: 1.6 });
+    map.once('moveend', () => p.marker.openPopup());
+    if (window.innerWidth <= 940) document.querySelector('.map-card').scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
   }
 
-  // Map
-  const card = document.getElementById('map-card');
-  if (!window.d3 || !window.topojson || !window.Datamap || !Datamap.prototype.perTopo) {
-    document.getElementById('map-msg').hidden = false;
-    return;
-  }
-  const topo = Datamap.prototype.perTopo;
-  const obj = topo.objects.per;
-  const depts = topojson.feature(topo, obj).features;
-  const innerMesh = topojson.mesh(topo, obj, (a, b) => a !== b);
-  const outline = topojson.merge(topo, obj.geometries);
-
-  PLANTS.forEach(p => {
-    const f = depts.find(f => d3.geoContains(f, [p.lo, p.la]));
-    p.dept = f ? deptName(f.properties.name) : null;
-    if (p.dept) document.getElementById('dept-' + p.id).textContent = 'Departamento de ' + p.dept;
-  });
-  const plantDepts = new Set(PLANTS.map(p => p.dept));
-
-  const COUNTRIES = [
-    { name: 'Ecuador', lo: -78.6, la: -2.3 }, { name: 'Colombia', lo: -72.2, la: -0.9 },
-    { name: 'Brasil', lo: -69.6, la: -8.2 }, { name: 'Bolivia', lo: -67.8, la: -15.9 },
-    { name: 'Chile', lo: -69.75, la: -18.3 }
-  ];
-  const OCEAN = { name: 'Océano Pacífico', lo: -80.4, la: -11.2 };
-  const deptLabels = depts.filter(f => !['Callao', 'Lima Province'].includes(f.properties.name))
-    .map(f => ({ name: deptName(f.properties.name), f }));
-
-  const svg = d3.select('#map');
-  const world = svg.append('g');
-  const gratPath = world.append('path').attr('class', 'grat')
-    .datum(d3.geoGraticule().extent([[-90, -26], [-60, 6]]).step([2, 2])());
-  const deptPaths = world.append('g').selectAll('path').data(depts).join('path')
-    .attr('class', d => 'dept' + (plantDepts.has(deptName(d.properties.name)) ? ' has-plant' : ''));
-  const innerPath = world.append('path').attr('class', 'inner').datum(innerMesh);
-  const outlinePath = world.append('path').attr('class', 'outline').datum(outline);
-
-  const labelLayer = svg.append('g');
-  const cLabels = labelLayer.selectAll('text.c-label').data(COUNTRIES).join('text').attr('class', 'c-label').text(d => d.name);
-  const oLabel = labelLayer.append('text').attr('class', 'o-label').datum(OCEAN).text(OCEAN.name);
-  const dLabels = labelLayer.selectAll('text.d-label').data(deptLabels).join('text').attr('class', 'd-label').attr('dy', '0.35em').text(d => d.name);
-
-  const markerLayer = svg.append('g');
-  const markers = markerLayer.selectAll('g.mk').data(PLANTS).join('g')
-    .attr('class', 'mk').attr('tabindex', 0).attr('role', 'button')
-    .attr('aria-label', d => d.name + ': acercar en el mapa');
-  markers.append('circle').attr('class', 'hit').attr('r', 16);
-  markers.append('circle').attr('class', 'pulse').attr('r', 7);
-  markers.append('circle').attr('class', 'halo').attr('r', 11);
-  markers.append('circle').attr('class', 'dot').attr('r', 5.5);
-  markers.append('text').attr('class', 'm-label')
-    .attr('x', d => d.side === 'left' ? -12 : 12).attr('y', 4.5)
-    .attr('text-anchor', d => d.side === 'left' ? 'end' : 'start').text(d => d.short);
-  markers.on('click', (e, d) => { select(d.id, true); revealCard(d.id); })
-    .on('keydown', (e, d) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(d.id, true); revealCard(d.id); } });
-
-  function revealCard(id) {
-    if (window.innerWidth > 940) document.getElementById('plant-' + id).scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' });
-  }
-
-  let W = 600, H = 700, projection, path, t = d3.zoomIdentity;
-  const zoom = d3.zoom().scaleExtent([1, 40])
-    .filter(e => (e.type === 'touchstart' ? e.touches.length > 1 : true) && !e.button)
-    .on('zoom', e => { t = e.transform; world.attr('transform', t); place(); setView(null); });
-  svg.call(zoom).on('dblclick.zoom', null).style('touch-action', 'pan-y');
-
-  function measure() {
-    dLabels.each(function (d) { d.w = this.getComputedTextLength(); });
-    markers.select('text').each(function (d) { d.lw = this.getComputedTextLength(); });
-  }
-
-  function render() {
-    const r = card.getBoundingClientRect();
-    W = Math.max(280, r.width); H = Math.max(320, r.height);
-    svg.attr('viewBox', `0 0 ${W} ${H}`);
-    const padTop = 58, pad = 26;
-    projection = d3.geoMercator().fitExtent([[pad, padTop], [W - pad, H - pad - 20]], outline);
-    path = d3.geoPath(projection);
-    gratPath.attr('d', path);
-    deptPaths.attr('d', path);
-    innerPath.attr('d', path);
-    outlinePath.attr('d', path);
-    PLANTS.forEach(p => { p.xy = projection([p.lo, p.la]); });
-    COUNTRIES.forEach(c => { c.xy = projection([c.lo, c.la]); });
-    OCEAN.xy = projection([OCEAN.lo, OCEAN.la]);
-    deptLabels.forEach(d => { d.xy = path.centroid(d.f); d.area = path.area(d.f); });
-    zoom.extent([[0, 0], [W, H]]).translateExtent([[-W * .25, -H * .25], [W * 1.25, H * 1.25]]);
-    measure();
-    t = d3.zoomIdentity;
-    svg.call(zoom.transform, t);
-    setView('all');
-  }
-
-  function place() {
-    const k = t.k;
-    markers.attr('transform', d => { const [x, y] = t.apply(d.xy); return `translate(${x},${y})`; });
-    cLabels.attr('transform', d => { const [x, y] = t.apply(d.xy); return `translate(${x},${y})`; });
-    oLabel.attr('transform', d => { const [x, y] = t.apply(d.xy); return `translate(${x},${y}) rotate(-62)`; });
-    const boxes = PLANTS.map(p => {
-      const [x, y] = t.apply(p.xy), w = (p.lw || 60) + 16;
-      return p.side === 'left' ? [x - w, y - 12, x + 10, y + 12] : [x - 10, y - 12, x + w, y + 12];
-    });
-    dLabels.each(function (d) {
-      const [x, y] = t.apply(d.xy), hw = (d.w || 50) / 2 + 3;
-      const clash = boxes.some(b => x + hw > b[0] && x - hw < b[2] && y + 7 > b[1] && y - 7 < b[3]);
-      const show = d.area * k * k > 1600 && !clash;
-      this.setAttribute('transform', `translate(${x},${y})`);
-      this.style.display = show ? '' : 'none';
-    });
-    // Scale bar for the latitude at the centre of the view
-    const c = projection.invert(t.invert([W / 2, H / 2]));
-    const kmPerPx = 6371 * Math.cos(c[1] * Math.PI / 180) / (projection.scale() * k);
-    const target = 110 * kmPerPx;
-    const nice = [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000].reduce((best, v) => v <= target ? v : best, 1);
-    document.getElementById('scale-bar').style.width = (nice / kmPerPx) + 'px';
-    document.getElementById('scale-label').textContent = nf.format(nice) + ' km';
-  }
-
-  function setView(v) {
-    document.getElementById('view-all').setAttribute('aria-pressed', String(v === 'all'));
-    document.getElementById('view-north').setAttribute('aria-pressed', String(v === 'north'));
-  }
-  function go(transform, view) {
-    svg.transition().duration(DUR).call(zoom.transform, transform).on('end', () => setView(view));
-    if (DUR === 0) setView(view);
-  }
-  function fitPlants(ids) {
-    const pts = PLANTS.filter(p => ids.includes(p.id)).map(p => p.xy);
-    const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
-    const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
-    const k = Math.max(1, Math.min(14, (W - 220) / Math.max(1, x1 - x0), (H - 200) / Math.max(1, y1 - y0)));
-    return d3.zoomIdentity.translate(W / 2, H / 2).scale(k).translate(-(x0 + x1) / 2, -(y0 + y1) / 2);
-  }
-
-  document.getElementById('view-all').addEventListener('click', () => go(d3.zoomIdentity, 'all'));
-  document.getElementById('view-north').addEventListener('click', () => go(fitPlants(NORTH), 'north'));
-  document.getElementById('zoom-in').addEventListener('click', () => svg.transition().duration(DUR / 2).call(zoom.scaleBy, 1.6));
-  document.getElementById('zoom-out').addEventListener('click', () => svg.transition().duration(DUR / 2).call(zoom.scaleBy, 1 / 1.6));
-
-  map = {
-    highlight(id, doZoom) {
-      markers.classed('is-sel', d => d.id === id);
-      markers.filter(d => d.id === id).raise();
-      if (!doZoom) return;
-      const p = PLANTS.find(p => p.id === id);
-      const k = Math.max(t.k, 6);
-      go(d3.zoomIdentity.translate(W / 2, H / 2).scale(k).translate(-p.xy[0], -p.xy[1]), null);
-    }
-  };
-
-  render();
-  if (selected) map.highlight(selected, false);
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { measure(); place(); });
-  let rt;
-  new ResizeObserver(() => { clearTimeout(rt); rt = setTimeout(() => { render(); if (selected) map.highlight(selected, false); }, 120); }).observe(card);
+  setLayer(location.hash === '#satelite' ? 'satelite' : 'mapa');
+  map.fitBounds(L.latLngBounds(PLANTS.map(p => [p.la, p.lo])), { padding: pad() });
 })();
 </script>
 </body>
